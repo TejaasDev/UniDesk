@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { apps } from '../data'
 
 const AVAILABLE_APPS = ['notepad', 'browser', 'terminal', 'files', 'music', 'calendar']
 
@@ -43,17 +44,17 @@ const CreateProfile = ({ onClose, onCreate }) => {
         <div className='flex flex-col gap-2'>
           <label className='text-sm text-zinc-400'>Apps</label>
           <div className='grid grid-cols-3 gap-2'>
-            {AVAILABLE_APPS.map(app => (
+            {apps.map(app => (
               <button
-                key={app}
-                onClick={() => { toggleApp(app); setError('') }}
+                key={app.name}
+                onClick={() => { toggleApp(app.name); setError('') }}
                 className={`py-2 px-3 text-sm border transition-colors ${
-                  selectedApps.includes(app)
+                  selectedApps.includes(app.name)
                     ? 'bg-white text-zinc-900 border-white'
                     : 'bg-transparent text-zinc-400 border-zinc-600 hover:border-zinc-400'
                 }`}
               >
-                {app}
+                {app.name}
               </button>
             ))}
           </div>
