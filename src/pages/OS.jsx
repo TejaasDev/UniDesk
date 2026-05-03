@@ -112,7 +112,7 @@ const TerminalApp = () => {
 
   const commands = {
     help: () => [
-      "Commands: help, clear, echo [text], date, whoami, ls, pwd, uname",
+      "Commands: help, clear, echo [text], date, whoami, ls, pwd, uname, magic, funfact, authors",
     ],
     clear: () => {
       setLines([]);
@@ -126,6 +126,9 @@ const TerminalApp = () => {
     uname: () => ["UniBase wEbOs"],
     ls: () => ["Homework/ code/ stuff/ music/ games/ "],
     echo: (args) => [args.join(" ")],
+    magic: () => ["Javan Gabru ka jism thatthe maar rha hai"],
+    funfact: () => ["Samsoong is the best brand."],
+    authors: () => ["Aksh, Tejaas and Homesh"],
   };
 
   const run = (cmd) => {
@@ -301,11 +304,11 @@ const SettingsApp = ({ wallpaper, setWallpaper }) => {
             </div>
             <div className="bg-white/5 rounded-xl p-4 space-y-2 text-xs text-zinc-400 border border-white/5">
               {[
-                ["OS", "RoboOS 1.0"],
-                ["Build", "2026.1.0"],
-                ["Kernel", "6.8.0-robopilot"],
-                ["RAM", "8 GB"],
-                ["CPU", "Intel i3 11th Gen"],
+                ["OS", "UniDesk"],
+                ["Build", "Javaan Gabru"],
+                ["Kernel", "Jism"],
+                ["RAM", "32 mkb"],
+                ["CPU", "imtel core i17 (16) @ 2.0 mhz"],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between">
                   <span>{k}</span>
