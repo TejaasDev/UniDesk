@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useUserContext } from '../context/UserContext'
 import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
-    const { user, pushUser } = useUserContext();
+    const { user, pushUser, isLoggedIn } = useUserContext();
     const [name, setName] = useState("")
   
     const navigate = useNavigate();
@@ -11,8 +11,16 @@ const Auth = () => {
     const handleOnClick = ()=>{
         console.log(name);
         pushUser(name);
-        navigate("/profiles");
+        setTimeout(()=>{
+            navigate("/profiles");
+        }, 200);
     };
+
+    useEffect(()=>{
+        if (isLoggedIn) {
+            navigate("/profiles");
+        }
+    })
 
     return (
         <main className='w-screen h-screen bg-zinc-900'>
