@@ -55,7 +55,7 @@ const TaskBar = ({ currentProfile, onAppClick, openWindows }) => {
             backdrop-blur-xl bg-white/20 border border-white/50
             shadow-[0_8px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.7),inset_0_-1px_0_rgba(0,0,0,0.1)]"
         >
-          <div className="flex items-center gap-2 taskbar-item">
+          {/* <div className="flex items-center gap-2 taskbar-item">
             <button
               className="flex items-center gap-1.5 px-3 h-12 rounded-2xl
                 bg-white/30 border border-white/60
@@ -77,7 +77,7 @@ const TaskBar = ({ currentProfile, onAppClick, openWindows }) => {
                 Start
               </span>
             </button>
-          </div>
+          </div> */}
 
           <div className="flex items-end gap-2 flex-1 justify-center">
             {relevantApps.map((app) => {
@@ -144,7 +144,7 @@ const TaskBar = ({ currentProfile, onAppClick, openWindows }) => {
             })}
           </div>
 
-          <div className="flex items-center gap-2 taskbar-item">
+          {/* <div className="flex items-center gap-2 taskbar-item">
             <div
               className="flex flex-col items-center justify-center px-3 h-12 rounded-2xl min-w-[64px]
                 bg-black/10 border border-white/20
@@ -166,7 +166,7 @@ const TaskBar = ({ currentProfile, onAppClick, openWindows }) => {
                 })}
               </span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </>

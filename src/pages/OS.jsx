@@ -756,14 +756,15 @@ const WindowFrame = ({
   onMinimize,
   onFocus,
   onMove,
+  onResize,
+  onToggleMaximize,
   wallpaper,
   setWallpaper,
 }) => {
   const ref = useRef(null);
   const drag = useRef(false);
+  const resizeDir = useRef(null);
   const offset = useRef({ x: 0, y: 0 });
-
-  const size = DEFAULT_SIZES[win.app] || { width: 480, height: 360 };
 
   const AppComponent =
     win.app === "settings"
@@ -771,24 +772,64 @@ const WindowFrame = ({
       : APP_REGISTRY[win.app];
 
   const onMouseDown = (e) => {
-    if (e.target.closest("button")) return;
+    if (e.target.closest(".resize-handle")) return;
     drag.current = true;
     const rect = ref.current.getBoundingClientRect();
-    offset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    offset.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
     onFocus(win.id);
+  };
+
+  const startResize = (dir) => (e) => {
+    e.stopPropagation();
+    resizeDir.current = dir;
   };
 
   useEffect(() => {
     const move = (e) => {
-      if (!drag.current) return;
-      const x = e.clientX - offset.current.x;
-      const y = e.clientY - offset.current.y;
-      ref.current.style.left = x + "px";
-      ref.current.style.top = y + "px";
-      onMove(win.id, x, y);
+      if (drag.current && !win.maximized) {
+        const x = e.clientX - offset.current.x;
+        const y = e.clientY - offset.current.y;
+        onMove(win.id, x, y);
+      }
+
+      if (resizeDir.current && !win.maximized) {
+        const rect = ref.current.getBoundingClientRect();
+
+        let newW = rect.width;
+        let newH = rect.height;
+        let newX = rect.left;
+        let newY = rect.top;
+
+        if (resizeDir.current.includes("right")) newW = e.clientX - rect.left;
+
+        if (resizeDir.current.includes("bottom")) newH = e.clientY - rect.top;
+
+        if (resizeDir.current.includes("left")) {
+          newW = rect.right - e.clientX;
+          newX = e.clientX;
+        }
+
+        if (resizeDir.current.includes("top")) {
+          newH = rect.bottom - e.clientY;
+          newY = e.clientY;
+        }
+
+        onResize(win.id, {
+          width: Math.max(300, newW),
+          height: Math.max(200, newH),
+          x: newX,
+          y: newY,
+        });
+      }
     };
 
-    const up = () => (drag.current = false);
+    const up = () => {
+      drag.current = false;
+      resizeDir.current = null;
+    };
 
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseup", up);
@@ -797,72 +838,68 @@ const WindowFrame = ({
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };
-  }, []);
+  }, [win]);
 
   return (
     <div
       ref={ref}
       style={{
         position: "absolute",
-        left: win.x,
-        top: win.y,
-        width: size.width,
-        height: size.height,
+        left: win.maximized ? 0 : win.x,
+        top: win.maximized ? 0 : win.y,
+        width: win.maximized ? "100%" : win.width,
+        height: win.maximized ? "100%" : win.height,
         zIndex: win.focused ? 10 : 1,
       }}
       className="flex flex-col bg-zinc-900 border border-zinc-700"
       onMouseDown={() => onFocus(win.id)}
     >
       <div
-        className="flex items-center justify-between px-2 py-1 bg-zinc-800 text-xs cursor-move"
+        className="flex items-center justify-between px-2 py-1 bg-zinc-800 cursor-move"
         onMouseDown={onMouseDown}
       >
-        <span className="text-white text-2xl">{win.app}</span>
+        <span className="text-white text-sm">{win.app}</span>
 
         <div className="flex gap-2">
-          <button
-            onClick={() => onMinimize(win.id)}
-            className="text-white hover:bg-blue-500 text-xl aspect-square"
-          >
-            -
+          <button onClick={() => onMinimize(win.id)}>—</button>
+          <button onClick={() => onToggleMaximize(win.id)}>
+            {win.maximized ? "🗗" : "🗖"}
           </button>
-          <button
-            onClick={() => onClose(win.id)}
-            className="text-white hover:bg-red-500 text-xl"
-          >
-            X
-          </button>
+          <button onClick={() => onClose(win.id)}>✕</button>
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden">
         {AppComponent && <AppComponent />}
       </div>
-    </div>
-  );
-};
 
-const Clock = () => {
-  const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div
-      className="absolute top-4 right-5 text-right select-none"
-      style={{ zIndex: 10 }}
-    >
-      <div className="text-white text-lg font-light tracking-wide drop-shadow">
-        {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-      </div>
-      <div className="text-white/50 text-xs">
-        {time.toLocaleDateString([], {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        })}
-      </div>
+      {[
+        "top",
+        "right",
+        "bottom",
+        "left",
+        "top-left",
+        "top-right",
+        "bottom-left",
+        "bottom-right",
+      ].map((dir) => (
+        <div
+          key={dir}
+          onMouseDown={startResize(dir)}
+          className={`resize-handle absolute ${
+            dir.includes("top") ? "top-0" : ""
+          } ${dir.includes("bottom") ? "bottom-0" : ""}
+            ${dir.includes("left") ? "left-0" : ""}
+            ${dir.includes("right") ? "right-0" : ""}
+          `}
+          style={{
+            width: dir.includes("left") || dir.includes("right") ? 6 : "100%",
+            height: dir.includes("top") || dir.includes("bottom") ? 6 : "100%",
+            cursor: `${dir}-resize`,
+            zIndex: 20,
+          }}
+        />
+      ))}
     </div>
   );
 };
@@ -870,6 +907,7 @@ const Clock = () => {
 const OS = () => {
   const { id } = useParams();
   const { profiles } = useProfileContext();
+
   const [currentProfile, setCurrentProfile] = useState({});
   const [windows, setWindows] = useState([]);
   const [wallpaper, setWallpaper] = useState(0);
@@ -882,13 +920,17 @@ const OS = () => {
   const openApp = useCallback((appName) => {
     setWindows((prev) => {
       const existing = prev.find((w) => w.app === appName);
-      if (existing)
+
+      if (existing) {
         return prev.map((w) =>
           w.id === existing.id
             ? { ...w, minimized: false, focused: true }
             : { ...w, focused: false },
         );
+      }
+
       const offset = prev.filter((w) => !w.minimized).length;
+
       return [
         ...prev.map((w) => ({ ...w, focused: false })),
         {
@@ -896,40 +938,49 @@ const OS = () => {
           app: appName,
           x: 80 + offset * 28,
           y: 50 + offset * 24,
+          width: DEFAULT_SIZES[appName]?.width || 500,
+          height: DEFAULT_SIZES[appName]?.height || 400,
           minimized: false,
+          maximized: false,
           focused: true,
         },
       ];
     });
   }, []);
 
-  const closeWindow = useCallback(
-    (winId) => setWindows((prev) => prev.filter((w) => w.id !== winId)),
-    [],
-  );
-  const minimizeWindow = useCallback(
-    (winId) =>
-      setWindows((prev) =>
-        prev.map((w) =>
-          w.id === winId ? { ...w, minimized: true, focused: false } : w,
-        ),
+  const closeWindow = useCallback((id) => {
+    setWindows((prev) => prev.filter((w) => w.id !== id));
+  }, []);
+
+  const minimizeWindow = useCallback((id) => {
+    setWindows((prev) =>
+      prev.map((w) =>
+        w.id === id ? { ...w, minimized: true, focused: false } : w,
       ),
-    [],
-  );
-  const focusWindow = useCallback(
-    (winId) =>
-      setWindows((prev) =>
-        prev.map((w) => ({ ...w, focused: w.id === winId })),
-      ),
-    [],
-  );
-  const moveWindow = useCallback(
-    (winId, x, y) =>
-      setWindows((prev) =>
-        prev.map((w) => (w.id === winId ? { ...w, x, y } : w)),
-      ),
-    [],
-  );
+    );
+  }, []);
+
+  const focusWindow = useCallback((id) => {
+    setWindows((prev) => prev.map((w) => ({ ...w, focused: w.id === id })));
+  }, []);
+
+  const moveWindow = useCallback((id, x, y) => {
+    setWindows((prev) =>
+      prev.map((w) => (w.id === id && !w.maximized ? { ...w, x, y } : w)),
+    );
+  }, []);
+
+  const resizeWindow = useCallback((id, data) => {
+    setWindows((prev) =>
+      prev.map((w) => (w.id === id && !w.maximized ? { ...w, ...data } : w)),
+    );
+  }, []);
+
+  const toggleMaximize = useCallback((id) => {
+    setWindows((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, maximized: !w.maximized } : w)),
+    );
+  }, []);
 
   return (
     <main
@@ -942,7 +993,9 @@ const OS = () => {
       }}
     >
       <div className="absolute inset-0 bg-black/20" />
-      <Clock />
+
+      {/* <Clock /> */}
+
       {windows
         .filter((w) => !w.minimized)
         .map((win) => (
@@ -953,10 +1006,13 @@ const OS = () => {
             onMinimize={minimizeWindow}
             onFocus={focusWindow}
             onMove={moveWindow}
+            onResize={resizeWindow}
+            onToggleMaximize={toggleMaximize}
             wallpaper={wallpaper}
             setWallpaper={setWallpaper}
           />
         ))}
+
       <TaskBar
         currentProfile={currentProfile}
         onAppClick={openApp}
