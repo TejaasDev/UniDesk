@@ -1,22 +1,21 @@
-import React, { useEffect } from 'react'
-import {useUserContext} from "../context/UserContext" 
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from "react";
+import { useUserContext } from "../context/UserContext";
+import { useNavigate } from "react-router-dom";
 
-const ProtectedPage = ({children}) => {
-  
-    const {isLoggedIn} = useUserContext();
+const ProtectedPage = ({ children }) => {
+  const { isLoggedIn } = useUserContext();
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    useEffect(()=>{
-        if (!isLoggedIn()) {
-            navigate("/auth");
-        }
-    }, [isLoggedIn])
+  useEffect(() => {
+    setTimeout(() => {
+      if (!isLoggedIn()) {
+        navigate("/auth");
+      }
+    }, 0);
+  }, [isLoggedIn]);
 
-    return (
-        <div>{children}</div>
-    )
-}
+  return <div>{children}</div>;
+};
 
-export default ProtectedPage
+export default ProtectedPage;
